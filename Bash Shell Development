@@ -1,0 +1,145 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+
+#define MAX_INPUT_LENGTH 50     // It takes maximum number of input is upto 50
+
+void execute(char *args[])
+{
+    pid_t pid = fork();      // "pid_t" is nothing but data type.. We can use "int" as data type over there..
+    int status;	      // fork() is system call which create child process..
+
+    if (pid == -1)           // If return values is -1 that means fails to create new process..
+    {
+        perror("fork");
+        exit(1);
+    }
+    else if (pid == 0)   // If return value is 0 that means child process is created..
+    {
+        // Child process
+        if (execvp(args[0], args) == -1)   // execvp used to give vector path..
+        {
+            perror("execvp");
+            exit(1);
+        }
+    } 
+    else  
+    {
+        // Parent process
+        waitpid(pid, &status, 0);
+    }
+}
+
+int main() 
+{
+    char input[MAX_INPUT_LENGTH];        // Charecter input array for taking input from user..
+    char *args[MAX_INPUT_LENGTH];  
+
+    while(1)
+    {
+        printf("BSD> ");
+       
+        fgets(input, MAX_INPUT_LENGTH, stdin);
+        input[strlen(input) - 1] = '\0';  // Remove newline character
+
+        // Parse input into arguments
+        char *token = strtok(input, " ");
+        int i = 0;
+        
+        while(token != NULL)
+         {
+            args[i] = token;
+            token = strtok(NULL, " ");    
+            i++;
+         }
+    
+        args[i] = NULL;  // NULL-terminate the argument array
+
+        // Check for built-in commands
+        if (strcmp(args[0], "center") == 0 ) 
+        {
+            if (chdir(args[1]) != 0)          // Chdir() is system call used to change directory..
+            {
+                perror("center");
+            }
+        }
+        else if (strcmp(args[0], "mkdir") == 0)
+        {
+            if (mkdir(args[1],0777) != 0)      // mkdir() is system call used to to create new directory..
+            {
+                perror("mkdir");
+            }
+        } 
+        else if (strcmp(args[0], "cwd") == 0 ) 
+        {
+            if (getcwd(input, MAX_INPUT_LENGTH) == NULL)  // getcwd() is used to show current working directory..
+            {
+                perror("cwd");
+            }
+            else 
+            {
+                printf("%s\n", input);     // Prints current working directory..
+            }
+        } 
+        else if (strcmp(args[0], "echo") == 0) 
+        {
+            for (int j = 1; j < i; j++)         
+            {
+                printf("%s ", args[j]);    
+                printf("%d",i);       
+            }
+            printf("\n");
+        } 
+        
+        /* else if(strcmp(args[0], "ls") == 0 || strcmp(args[0], "list") == 0)  // accept both "ls" and "list" commands
+	{
+    		execute(args);  // execute the command
+	} */
+        else if(strcmp(args[0], "list") == 0 )
+        {
+            args[0]="ls";			  
+            strcpy(input, "ls");                 // We cpoied "ls" in input so that it will execute ls command..
+            execute(args);                      // It call execute function to excute "ls" command.. 
+        } 
+	else if(strcmp(args[0], "build") == 0)  
+	{
+		args[0]="gedit";
+		strcpy(input,"gedit");
+    		execute(args);  // execute the command
+	} 
+	
+	else if(strcmp(args[0], "show") == 0)  
+	{
+		args[0]="cat";
+		strcpy(input,"cat");
+    		execute(args);  // execute the command
+	} 
+	
+	else if(strcmp(args[0], "delete") == 0)  
+	{
+		args[0]="rm";
+		strcpy(input,"rm");
+    		execute(args);  // execute the command
+	} 
+	
+	/*else if(strcmp(args[0], "delete") == 0 && strcmp(args[1], "f"))  
+	{
+		args[0]="rm";
+		args[1]="-rf";
+		strcpy(input,"rm");
+		strcpy(input,"-rf");
+    		execute(args);  // execute the command
+	} */
+        else
+        {
+            //printf("command not found: %s\n", args[0]);
+            execute(args);   
+        }
+    }
+    return 0;
+}
+
